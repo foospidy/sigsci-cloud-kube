@@ -1,23 +1,14 @@
 language: bash
+
+# from https://github.com/koalaman/shellcheck/issues/589
+# Use container-based infrastructure for quicker build start-up
+sudo: false
+
 addons:
   apt:
+    sources:
+    - debian-sid    # Grab shellcheck from the Debian repo (o_O)
     packages:
-    - whois
-    - gawk
-    - mawk
-    - original-awk
-    - mksh
-    - posh
-    - dash
-    - bash
-
-before_install:
-  # Grab ShellCheck from the Debian repo
-  # install shellcheck after other packages already installed from Ubuntu repo
-  # https://github.com/koalaman/shellcheck/issues/941
-  - curl -sSL "https://ftp-master.debian.org/keys/archive-key-7.0.asc" | sudo -E apt-key add -
-  - echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
-  - sudo apt-get update
-  - sudo apt-get install shellcheck
+    - shellcheck
 
 script: make lint
