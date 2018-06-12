@@ -20,15 +20,4 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install shellcheck
 
-env:
-  - AWK=awk
-  - AWK=mawk
-  - AWK=gawk
-  - AWK=original-awk
-  - SH=sh
-  - SH=mksh
-  - SH=posh
-  - SH=dash
-  - SH=bash
-
 script: make lint
