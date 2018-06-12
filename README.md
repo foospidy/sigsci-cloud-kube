@@ -2,6 +2,8 @@
 
 Helper script for deploying the Signal Sciences reverse proxy agent in a Kubernetes cluster.
 
+[![Build Status](https://travis-ci.org/foospidy/sigsci-cloud-kube.svg?branch=master)](https://travis-ci.org/foospidy/sigsci-cloud-kube)
+
 This is ideal to use as a template and modify to your needs. Current cloud provider support is Google Cloud and IBM Cloud.
 
 More providers to be added.
