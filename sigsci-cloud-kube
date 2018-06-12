@@ -1,0 +1,393 @@
+#!/usr/bin/env bash
+#
+#  Script     : sigsci-cloud-kube
+#  Author     : foospidy
+#  License    : See LICENSE file.
+#  Description: Deploy the Signal Sciences agent in reversey proxy mode within a kubernetes cluster,
+#               in various cloud environments.
+#
+
+set -e
+
+function options {
+	echo ""
+	echo "OPTIONS:"
+	echo "-C|--create		Create a new Kubernetes cluster on specified cloud providers."
+	echo "-D|--delete		Delete a Kubernetes cluster on specified cloud providers."
+	echo "-e|--expose		Expose Kubernetes cluster for incoming connections on specified cloud providers."
+	echo "-u|--un-expose		Un-expose Kubernetes cluster from incoming connections on specified cloud providers."
+	echo "-d|--deploy		Deploy Signal Sciences in cluster on specified cloud providers."
+	echo "-l|--list		List clusters on specified cloud providers."
+	echo "-c|--cluster		Specify Kubernetes cluster name."
+	echo "-str|--sigsci-to-registry	Pulls sigsci image and pushes it to container regisgtry on specified cloud provideers."
+	echo "--install-tools			Installs or displays install links for tools needed for specified cloud providers."
+	echo "--update-tools			Updates tools needed for specified cloud providers."
+	echo ""
+}
+
+function check_clouds {
+	supported=""
+
+	if [ "$1" == "gcloud" ]; then
+		supported="true"
+	fi
+
+	if [ "$1" == "ibmcloud" ]; then
+		supported="true"
+	fi
+
+	if [ "$supported" != "true" ]; then
+		echo "Unsupported cloud: ${1}"
+		exit
+	fi
+}
+
+function check_variables {
+	if [ "$1" == 'gcloud' ]; then
+		if [ -z "${SIGSCI_GCLOUD_PROJECT}" ]; then
+			echo "Please set your Google Cloud project:"
+			echo "export SIGSCI_GCLOUD_PROJECT=myprjoect-1234"
+			exit
+		fi
+	fi
+
+	if [ "$1" == 'ibmcloud' ]; then
+		if [ -z "${IBMCLOUD_REGISTRY_NAMESPACE}" ]; then
+			echo "To add an image to the registry in IBM Cloud you must define a namespace."
+			echo "Please set your IBM Cloud registry namespace:"
+			echo "export IBMCLOUD_REGISTRY_NAMESPACE=mynamespace"
+			exit
+		fi
+	fi
+
+	if [ "$1" == "sigsci" ]; then
+		if [ -z "${SIGSCI_ACCESSKEYID}" ]; then
+			echo "Please set your SIGSCI_ACCESSKEYID."
+			echo "export SIGSCI_ACCESSKEYID=<your key id>"
+			exit
+		fi
+
+		if [ -z "${SIGSCI_SECRETACCESSKEY}" ]; then
+			echo "Please set your SIGSCI_SECRETACCESSKEY."
+			echo "export SIGSCI_SECRETACCESSKEY=<your secret key>"
+			exit
+		fi
+		
+		if [ -z "${SIGSCI_REVERSE_PROXY_UPSTREAM}" ]; then
+			echo "Please set your SIGSCI_REVERSE_PROXY_UPSTREAM."
+			echo "export SIGSCI_REVERSE_PROXY_UPSTREAM=myapp-123.appspot.com"
+			exit
+		fi
+	fi
+}
+
+kubectl=$(kubectl version)
+if [ "${kubectl}" == "" ]; then
+	echo ""
+	echo "You need to install kubectl."
+	echo "See https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl"
+	echo ""
+fi
+
+if [[ $# -eq 0 ]]; then
+	options
+	exit
+fi
+
+ACTION=""
+CLOUD=()
+CLUSTER="signalsciences"
+if [ -z "${GCLOUD_CONTAINER_REGISTRY}" ]; then
+	GCLOUD_CONTAINER_REGISTRY="gcr.io"
+fi
+
+if [ -z "${IBMCLOUD_CONTAINER_REGISTRY}" ]; then
+	IBMCLOUD_CONTAINER_REGISTRY="registry.ng.bluemix.net"
+fi
+
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	case $key in
+		-C|--create)
+			ACTION="create"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					check_variables "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-D|--delete)
+			ACTION="delete"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-c|--cluster)
+			CLUSTER="$2"
+			shift
+			shift
+		;;
+		-e|--expose)
+			ACTION="expose"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-u|--un-expose)
+			ACTION="un-expose"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-d|--deploy)
+			ACTION="deploy"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-l|--list)
+			ACTION="list-clusters"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		-str|--sigsci-to-registry)
+			ACTION="sigsci-to-registry"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					check_variables "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		--install-tools)
+			ACTION="install-tools"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					check_variables "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		--update-tools)
+			ACTION="update-tools"
+			shift
+			while true;
+			do
+				if [[ "$1" == -* ]] || [ "$1" == "" ];
+				then
+					break
+				fi
+
+				if [ "$1" != "" ];
+				then
+					check_clouds "${1}"
+					check_variables "${1}"
+					CLOUD+=("${1}")
+					shift
+				fi
+			done;
+		;;
+		*)
+			options
+			exit;
+			shift
+		;;
+	esac
+done
+
+case $ACTION in
+	create)
+		echo "Creating cluster(s) ${CLUSTER} on ${CLOUD[*]}."
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-kube-create-cluster" CLUSTER="${CLUSTER}" GCLOUD_PROJECT="${SIGSCI_GCLOUD_PROJECT}"
+		done
+	;;
+
+	delete)
+		echo "Deleting cluster(s) ${CLUSTER} on ${CLOUD[*]}."
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-kube-delete-cluster" CLUSTER="${CLUSTER}" GCLOUD_PROJECT="${SIGSCI_GCLOUD_PROJECT}"
+		done
+	;;
+
+	deploy)
+		for c in "${CLOUD[@]}";
+		do
+			echo "Generating deployment file ${c}-deployment.yaml"
+			check_variables "sigsci"
+
+			if [ "$c" == "gcloud" ]; then
+				check_variables "$c"
+				cp template-deployment.yaml gcloud-deployment.yaml
+				sed -i '' "s/_CONTAINER_REGISTRY_/${GCLOUD_CONTAINER_REGISTRY}\\/${SIGSCI_GCLOUD_PROJECT}/" gcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_ACCESSKEYID_/${SIGSCI_ACCESSKEYID}/" gcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_SECRETACCESSKEY_/${SIGSCI_SECRETACCESSKEY}/" gcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_REVERSE_PROXY_UPSTREAM_/${SIGSCI_REVERSE_PROXY_UPSTREAM}/" gcloud-deployment.yaml
+
+				make gcloud-kube-apply-deployment CLUSTER="${CLUSTER}"
+			fi
+
+			if [ "$c" == "ibmcloud" ]; then
+				check_variables "$c"
+				cp template-deployment.yaml ibmcloud-deployment.yaml
+				sed -i '' "s/_CONTAINER_REGISTRY_/${IBMCLOUD_CONTAINER_REGISTRY}\\/${IBMCLOUD_REGISTRY_NAMESPACE}/" ibmcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_ACCESSKEYID_/${SIGSCI_ACCESSKEYID}/" ibmcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_SECRETACCESSKEY_/${SIGSCI_SECRETACCESSKEY}/" ibmcloud-deployment.yaml
+				sed -i '' "s/_SIGSCI_REVERSE_PROXY_UPSTREAM_/${SIGSCI_REVERSE_PROXY_UPSTREAM}/" ibmcloud-deployment.yaml
+
+				make ibmcloud-kube-apply-deployment CLUSTER="${CLUSTER}"
+			fi
+		done
+	;;
+
+	expose)
+		echo "Exposing deployment(s) ${CLUSTER} on ${CLOUD[*]}."
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-kube-expose-service" CLUSTER="${CLUSTER}"
+		done
+	;;
+
+	un-expose)
+		echo "Un-exposing deployment(s) ${CLUSTER} on ${CLOUD[*]}."
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-kube-delete-service" CLUSTER="${CLUSTER}"
+		done
+	;;
+
+	sigsci-to-registry)
+		echo "Pushing sigsci image to registry on ${CLOUD[*]}"
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-sigsci-to-registry" \
+				GCLOUD_PROJECT="${SIGSCI_GCLOUD_PROJECT}" \
+				GCLOUD_CONTAINER_REGISTRY="${GCLOUD_CONTAINER_REGISTRY}" \
+				IBMCLOUD_REGISTRY_NAMESPACE="${IBMCLOUD_REGISTRY_NAMESPACE}"
+		done
+	;;
+
+	list-clusters)
+		echo "List clusters on ${CLOUD[*]}"
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-list-clusters" \
+				GCLOUD_PROJECT="${SIGSCI_GCLOUD_PROJECT}"
+		done
+	;;
+
+	install-tools)
+		echo "Updating tools for ${CLOUD[*]}"
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-install-tools"
+		done
+	;;
+
+	update-tools)
+		echo "Updating tools for ${CLOUD[*]}"
+		for c in "${CLOUD[@]}";
+		do
+			make "${c}-update-tools"
+		done
+	;;
+
+	*)
+		echo "Error: undefined action (${ACTION})."
+		exit
+	;;
+esac

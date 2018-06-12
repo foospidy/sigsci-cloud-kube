@@ -1,0 +1,31 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: sigsci-agent-deployment
+  labels:
+    app: sigsci-agent
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sigsci-agent
+    spec:
+      containers:
+        - name: sigsci-agent
+          image: _CONTAINER_REGISTRY_/sigsci:latest
+          ports:
+          - containerPort: 8080
+          env:
+            - name: SIGSCI_ACCESSKEYID
+              value: "_SIGSCI_ACCESSKEYID_"
+            - name: SIGSCI_SECRETACCESSKEY
+              value: "_SIGSCI_SECRETACCESSKEY_"
+            - name: SIGSCI_REVERSE_PROXY
+              value: "true"
+            - name: SIGSCI_REVERSE_PROXY_LISTENER
+              value: "0.0.0.0:8080"
+            - name: SIGSCI_REVERSE_PROXY_UPSTREAM
+              value: "_SIGSCI_REVERSE_PROXY_UPSTREAM_"
+            - name: SIGSCI_REVERSE_PROXY_PASS_HOST_HEADER
+              value: "false"
