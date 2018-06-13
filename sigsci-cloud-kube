@@ -81,13 +81,16 @@ function check_variables {
 	fi
 }
 
-kubectl=$(kubectl version)
-if [ "${kubectl}" == "" ]; then
-	echo ""
-	echo "You need to install kubectl."
-	echo "See https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl"
-	echo ""
-fi
+function check_kubectl {
+	kubectl=$(kubectl version)
+
+	if [ "${kubectl}" == "" ]; then
+		echo ""
+		echo "You need to install kubectl."
+		echo "See https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl"
+		echo ""
+	fi
+}
 
 if [[ $# -eq 0 ]]; then
 	options

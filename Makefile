@@ -13,6 +13,9 @@ gcloud-kube-create-cluster:
 ibmcloud-kube-create-cluster:
 	bx cs cluster-create --name $(CLUSTER)
 
+aws-kube-create-cluster:
+	kops create cluster --node-count=2 --node-size=t2.medium --zones=us-east-1a --name=$(CLUSTER)
+
 # DELETE CLUSTER
 gcloud-kube-delete-cluster:
 	gcloud config set project $(GCLOUD_PROJECT)
@@ -74,9 +77,6 @@ ibmcloud-kube-delete-service:
 	eval $(bx cs cluster-config $(CLUSTER) --export)
 	kubectl delete service sigsci-agent-service
 
-
-
-
 # TOOLS
 ibmcloud-install-tools:
 	#https://console.bluemix.net/docs/cli/index.html#overview
@@ -89,11 +89,34 @@ ibmcloud-install-tools:
 gcloud-install-tools:
 	@echo See https://cloud.google.com/sdk/install
 
+aws-install-tools:
+# https://medium.com/containermind/how-to-create-a-kubernetes-cluster-on-aws-in-few-minutes-89dda10354f4
+ifeq ($(OS), Darwin)
+	brew install awscli
+	brew install kops
+else
+	pip install awscli --upgrade --user
+	curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+	chmod +x kops-linux-amd64
+	sudo mv kops-linux-amd64 /usr/local/bin/kops
+endif	
+
 gcloud-update-tools:
 	gcloud components update
 
 ibmcloud-update-tools:
 	bx plugin update container-service -r Bluemix
+
+aws-update-tools:
+ifeq ($(OS), Darwin)
+	brew upgrade awscli
+	brew upgrade kops
+else
+	pip install awscli --upgrade --user
+	curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+	chmod +x kops-linux-amd64
+	sudo mv kops-linux-amd64 /usr/local/bin/kops
+endif
 
 # BUILD
 install:

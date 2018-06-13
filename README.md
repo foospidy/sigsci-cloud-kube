@@ -8,9 +8,9 @@ This is ideal to use as a template and modify to your needs. Current cloud provi
 
 More providers to be added.
 
-Basic usage:
+## Basic Usage
 
-```
+```bash
 # export needed variables
 export SIGSCI_GCLOUD_PROJECT=myproject-1234
 export IBMCLOUD_REGISTRY_NAMESPACE=signalsciences
@@ -30,3 +30,18 @@ export SIGSCI_REVERSE_PROXY_UPSTREAM=myapp-1234.appspot.com
 # Expose Signal Sciences service on cloud providers
 ./sigsci-cloud-kube -e ibmcloud gcloud -c sigsci0
 ```
+
+## Resource Links
+
+IBM Cloud
+
+- todo
+
+Google Cloud
+
+- todo
+
+AWS
+
+- https://medium.com/containermind/how-to-create-a-kubernetes-cluster-on-aws-in-few-minutes-89dda10354f4
+- https://aws.amazon.com/fargate/
