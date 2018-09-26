@@ -14,7 +14,8 @@ ibmcloud-kube-create-cluster:
 	bx cs cluster-create --name $(CLUSTER)
 
 aws-kube-create-cluster:
-	kops create cluster --node-count=2 --node-size=t2.medium --zones=us-east-1a --name=$(CLUSTER)
+	#kops create cluster --node-count=2 --node-size=t2.medium --zones=us-east-1a --name=$(CLUSTER)
+	aws ecs create-cluster --cluster-name $(CLUSTER)
 
 # DELETE CLUSTER
 gcloud-kube-delete-cluster:
@@ -23,6 +24,9 @@ gcloud-kube-delete-cluster:
 
 ibmcloud-kube-delete-cluster:
 	bx cs cluster-rm $(CLUSTER)
+
+aws-kube-delete-cluster:
+	aws ecs delete-cluster --cluster $(CLUSTER)
 
 # ADD SIGSCI TO REGISTRY
 gcloud-sigsci-to-registry:
@@ -45,6 +49,9 @@ gcloud-list-clusters:
 ibmcloud-list-clusters:
 	bx cs clusters
 
+aws-list-clusters:
+	aws ecs list-clusters
+
 # DEPLOY DEPLOYMENTS
 gcloud-kube-apply-deployment:
 	gcloud config set container/cluster $(CLUSTER)
@@ -54,6 +61,9 @@ gcloud-kube-apply-deployment:
 ibmcloud-kube-apply-deployment:
 	eval $$(bx cs cluster-config $(CLUSTER) --export) \
 		&& kubectl apply -f ibmcloud-deployment.yaml
+
+aws-kube-apply-deployment:
+	aws ecs register-task-definition --cli-input-json file://aws-ecs-task.json
 
 # EXPOSE SERVICE
 gcloud-kube-expose-service:
@@ -70,6 +80,9 @@ ibmcloud-kube-expose-service:
 		&& ibmcloud ks workers $(CLUSTER) \
 		&& kubectl describe service sigsci-agent-service
 
+aws-kube-expose-service:
+	aws ecs create-service --cluster $(CLUSTER) --service-name sigsci-agent-service --task-definition sigsci:1 --desired-count 2 --launch-type "FARGATE" --network-configuration "awsvpcConfiguration={subnets=[subnet-abcd1234],securityGroups=[sg-abcd1234]}"
+
 # UN-EXPOSE SERVICE
 gcloud-kube-delete-service:
 	gcloud config set container/cluster $(CLUSTER)
@@ -79,6 +92,9 @@ gcloud-kube-delete-service:
 ibmcloud-kube-delete-service:
 	eval $(bx cs cluster-config $(CLUSTER) --export) \
 	 && kubectl delete service sigsci-agent-service
+
+aws-kube-delete-service:
+	aws ecs delete-service --service sigsci-agent-service
 
 # TOOLS
 ibmcloud-install-tools:
@@ -197,3 +213,12 @@ ibmcloud-cs-cluster-config:
 
 ibmcloud-cs-workers:
 	bx cs workers mycluster
+
+aws-task-definitions:
+	aws ecs list-task-definitions
+
+aws-list-services:
+	aws ecs list-services --cluster $(CLUSTER)
+
+aws-deregister-task-definition:
+	aws ecs deregister-task-definition --task-definition $(TASK)

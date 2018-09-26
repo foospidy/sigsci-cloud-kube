@@ -36,6 +36,10 @@ function check_clouds {
 		supported="true"
 	fi
 
+	if [ "$1" == "aws" ]; then
+		supported="true"
+	fi
+
 	if [ "$supported" != "true" ]; then
 		echo "Unsupported cloud: ${1}"
 		exit
@@ -333,6 +337,17 @@ case $ACTION in
 				sed -i '' "s/_SIGSCI_REVERSE_PROXY_UPSTREAM_/${SIGSCI_REVERSE_PROXY_UPSTREAM}/" ibmcloud-deployment.yaml
 
 				make ibmcloud-kube-apply-deployment CLUSTER="${CLUSTER}"
+			fi
+
+			if [ "$c" == "aws" ]; then
+				check_variables "$c"
+				cp template-aws-ecs-task.json aws-ecs-task.json
+				#sed -i '' "s/_CONTAINER_REGISTRY_/${AWS_CONTAINER_IMAGE}\\/${IBMCLOUD_REGISTRY_NAMESPACE}/" aws-ecs-task.json
+				sed -i '' "s/_SIGSCI_ACCESSKEYID_/${SIGSCI_ACCESSKEYID}/" aws-ecs-task.json
+				sed -i '' "s/_SIGSCI_SECRETACCESSKEY_/${SIGSCI_SECRETACCESSKEY}/" aws-ecs-task.json
+				sed -i '' "s/_SIGSCI_REVERSE_PROXY_UPSTREAM_/${SIGSCI_REVERSE_PROXY_UPSTREAM}/" aws-ecs-task.json
+
+				make aws-kube-apply-deployment CLUSTER="${CLUSTER}"
 			fi
 		done
 	;;

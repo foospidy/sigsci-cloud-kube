@@ -1,0 +1,32 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "sigsci-agent-service",
+      "image": "registry.hub.docker.com/foospidy/sigsci",
+      "essential": true,
+      "environment": [
+        {
+            "name": "SIGSCI_ACCESSKEYID",
+            "value": "_SIGSCI_ACCESSKEYID_"
+        },
+        {
+            "name": "SIGSCI_SECRETACCESSKEY",
+            "value": "_SIGSCI_SECRETACCESSKEY_"
+        },
+        {
+            "name": "SIGSCI_REVERSE_PROXY_UPSTREAM",
+            "value": "_SIGSCI_REVERSE_PROXY_UPSTREAM_"
+        }
+      ],
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80
+        }
+      ],
+      "memory": 500,
+      "cpu": 10
+    }
+  ],
+  "family": "sigsci"
+}
