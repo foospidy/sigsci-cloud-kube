@@ -65,7 +65,10 @@ gcloud-kube-expose-service:
 ibmcloud-kube-expose-service:
 	eval $$(bx cs cluster-config $(CLUSTER) --export) \
 		&& kubectl expose deployment sigsci-agent-deployment --name=sigsci-agent-service --type=NodePort --port 80 --target-port 8080 \
-		&& kubectl get service -o wide
+		&& kubectl get service -o wide \
+		&& sleep 10 \
+		&& ibmcloud ks workers $(CLUSTER) \
+		&& kubectl describe service sigsci-agent-service
 
 # UN-EXPOSE SERVICE
 gcloud-kube-delete-service:
@@ -74,8 +77,8 @@ gcloud-kube-delete-service:
 	kubectl delete service sigsci-agent-service
 
 ibmcloud-kube-delete-service:
-	eval $(bx cs cluster-config $(CLUSTER) --export)
-	kubectl delete service sigsci-agent-service
+	eval $(bx cs cluster-config $(CLUSTER) --export) \
+	 && kubectl delete service sigsci-agent-service
 
 # TOOLS
 ibmcloud-install-tools:
