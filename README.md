@@ -21,7 +21,7 @@ export SIGSCI_REVERSE_PROXY_UPSTREAM=myapp-1234.appspot.com
 # Create a new cluster on cloud providers
 ./sigsci-cloud-kube -C ibmcloud gcloud -c sigsci0
 
-# Push container image to cloud provier container registry
+# Push container image to cloud provider container registry
 ./sigsci-cloud-kube -str ibmcloud gcloud
 
 # Deploy Signal Sciences to cluster on cloud providers

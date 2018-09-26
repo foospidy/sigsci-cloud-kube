@@ -52,8 +52,8 @@ gcloud-kube-apply-deployment:
 	kubectl apply -f gcloud-deployment.yaml
 
 ibmcloud-kube-apply-deployment:
-	eval $(bx cs cluster-config $(CLUSTER) --export)
-	kubectl apply -f ibmcloud-deployment.yaml
+	eval $$(bx cs cluster-config $(CLUSTER) --export) \
+		&& kubectl apply -f ibmcloud-deployment.yaml
 
 # EXPOSE SERVICE
 gcloud-kube-expose-service:
@@ -63,9 +63,9 @@ gcloud-kube-expose-service:
 	kubectl get service -o wide
 
 ibmcloud-kube-expose-service:
-	eval $(bx cs cluster-config $(CLUSTER) --export)
-	kubectl expose deployment sigsci-agent-deployment --name=sigsci-agent-service --type=NodePort --port 80 --target-port 8080
-	kubectl get service -o wide
+	eval $$(bx cs cluster-config $(CLUSTER) --export) \
+		&& kubectl expose deployment sigsci-agent-deployment --name=sigsci-agent-service --type=NodePort --port 80 --target-port 8080 \
+		&& kubectl get service -o wide
 
 # UN-EXPOSE SERVICE
 gcloud-kube-delete-service:
@@ -155,8 +155,6 @@ kube-create-deployment:
 
 kube-get-deployment:
 	kubectl get deployment -o wide
-
-
 
 kube-get-service:
 	kubectl get service -o wide
